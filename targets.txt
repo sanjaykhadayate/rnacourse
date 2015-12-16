@@ -1,0 +1,7 @@
+Sample	Group	Batch	InputFile	InputFile2	OutputFile
+Viv1	Viv	a	SRR2001243.fastq	SRR2001244.fastq	Viv1.bam
+Viv2	Viv	a	SRR2001245.fastq	SRR2001246.fastq	Viv2.bam
+Viv3	Viv	b	SRR2001247.fastq	SRR2001248.fastq	Viv3.bam
+Hfd1	Hfd	a	SRR2001249.fastq	SRR2001250.fastq	Hfd1.bam
+Hfd2	Hfd	b	SRR2001251.fastq	SRR2001252.fastq	Hfd2.bam
+Hfd3	Hfd	a	SRR2001253.fastq	SRR2001254.fastq	Hfd3.bam
