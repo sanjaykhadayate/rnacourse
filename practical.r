@@ -18,6 +18,7 @@ factor1<-"Group"
 dir="/Users/skhadaya/Downloads/sratoolkit.2.5.5-mac64/bin/"
 isPairedEnd<-TRUE
 nthreads=4
+bamdir="/Users/skhadaya/Downloads/rnaseqpractical/"
 
 # read in target file using a funcion from limma package
 targets <- readTargets("targets.txt")
@@ -29,7 +30,7 @@ read2=paste0(dir,targets$InputFile2)
 
 # get the directory with rsubread genome index
 
-index="SubreadIndex/mm9_index"
+index="index"
 
 #Step 1: Index building
 ref <- system.file("extdata","reference.fa",package="Rsubread")
@@ -38,10 +39,10 @@ buildindex(basename="reference_index",reference=ref)
 # align reads using rsubreads package
 if (isPairedEnd == TRUE)
 {
-  subjunc(index=index,readfile1=read1,readfile2=read2,input_format="gzFASTQ",output_format="BAM",output_file=targets$OutputFile,nthreads=nthreads,unique=TRUE,indels=5)
+  subjunc(index=index,readfile1=read1,readfile2=read2,input_format="gzFASTQ",output_format="BAM",output_file=paste0(dir,targets$OutputFile),nthreads=nthreads,unique=TRUE,indels=5)
   
 }else {
-  subjunc(index=index,readfile1=read1,input_format="gzFASTQ",output_format="BAM",output_file=targets$OutputFile,nthreads=nthreads,unique=TRUE,indels=5)
+  subjunc(index=index,readfile1=read1,input_format="gzFASTQ",output_format="BAM",output_file=paste0(dir,targets$OutputFile),nthreads=nthreads,unique=TRUE,indels=5)
 }
 
 
@@ -65,9 +66,9 @@ alignstats<-propmapped(targets$OutputFile[1])
 write.table(alignstats,file="AlignmentSummary.txt",sep="\t")
 
 # count numbers of reads mapped to iGenome genes
-anno_for_featurecount<-"genes.gtf"
+anno_for_featurecount<-paste0(bamdir,"genes.gtf")
 
-  fc <-featureCounts(files=targets$OutputFile,annot.ext=anno_for_featurecount,isGTFAnnotationFile=TRUE,
+  fc <-featureCounts(files=paste0(bamdir,targets$OutputFile),annot.ext=anno_for_featurecount,isGTFAnnotationFile=TRUE,
    GTF.featureType="exon",useMetaFeatures=TRUE, GTF.attrType="gene_id",nthreads=nthreads,strandSpecific=strandspecific,isPairedEnd=isPairedEnd)
                               
   head(fc$counts)
@@ -175,7 +176,7 @@ colnames(colData)<-c("name","Group","Batch")
   # Perform splicing analysis
 
  # Perform exon level read counting 
-   fcexo<-featureCounts(files=targets$OutputFile,annot.ext=anno_for_featurecount,strandSpecific=strandspecific,
+   fcexo<-featureCounts(files=paste0(bamdir,targets$OutputFile),annot.ext=anno_for_featurecount,strandSpecific=strandspecific,
      isGTFAnnotationFile=TRUE,GTF.featureType="exon",GTF.attrType="gene_id",nthreads=8,
       isPairedEnd=isPairedEnd,useMetaFeatures=FALSE, allowMultiOverlap=TRUE)
                               
