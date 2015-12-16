@@ -57,6 +57,8 @@ factor1<-"Group"
 dir="/Users/skhadaya/Downloads/sratoolkit.2.5.5-mac64/bin/"
 isPairedEnd<-TRUE
 nthreads=8
+bamdir="/Users/skhadaya/Downloads/rnaseqpractical/"
+
 ```
 
 
@@ -106,7 +108,7 @@ read2[1]
 
 # get the directory with rsubread genome index
 
-index="SubreadIndex/mm9_index"
+index="index"
 
 ```
 
@@ -137,7 +139,7 @@ if (isPairedEnd == TRUE)
   readfile2=read2,
   input_format="gzFASTQ",
   output_format="BAM",
-  output_file=targets$OutputFile,
+  output_file=paste0(bamdir,targets$OutputFile),
   nthreads=nthreads,
   unique=TRUE,
   indels=5)
@@ -153,7 +155,7 @@ else {
   readfile1=read1,
   input_format="gzFASTQ",
   output_format="BAM",
-  output_file=targets$OutputFile,
+  output_file=paste0(bamdir,targets$OutputFile),
   useMetaFeatures=TRUE,
   nthreads=nthreads,
   unique=TRUE,
@@ -166,7 +168,7 @@ Quality Assessment
 
 ```{r,eval=TRUE,echo=TRUE,message=FALSE,results='hide',warning=FALSE}
 
-# Quality scores give the probabilities of read bases being incorrectly called, which is useful for examining the quality of sequencing data. 
+# Quality scores give the probabilities of read bases being incorrectly called, which is useful for examining the quality of sequencing data. This function extract quality strings and convert them to Phred scores.
 
 # Base quality scores
 qscore <- qualityScores(filename=read1[1],offset=33,nreads=1000)
@@ -203,7 +205,7 @@ legend("topright", legend=c("A", "T","G","C"), col=c("red","green","yellow","bro
 ```{r,eval=TRUE,echo=TRUE}
 # produce alignment statistics
 
-propmapped(targets$OutputFile[1])
+propmapped(paste0(bamdir,targets$OutputFile[1]))
 
 
 ```
@@ -214,12 +216,14 @@ Counting Reads
 ```{r,eval=TRUE,echo=TRUE,message=FALSE,results='hide',warning=FALSE}
 # count numbers of reads mapped to genes
 
-anno_for_featurecount<-"genes.gtf"
+anno_for_featurecount<-paste0(bamdir,"genes.gtf")
 
 fc <-featureCounts(
-files=targets$OutputFile,
+files=paste0(bamdir,targets$OutputFile)
+,
 annot.ext=anno_for_featurecount,
 isGTFAnnotationFile=TRUE,
+useMetaFeatures=TRUE,
 GTF.featureType="exon",
 GTF.attrType="gene_id",
 nthreads=nthreads,
@@ -230,9 +234,18 @@ isPairedEnd=isPairedEnd)
 
 ========================================================
 
-```{r,eval=TRUE,echo=TRUE,message=FALSE,results='hide',warning=FALSE}
+```{r,eval=TRUE,echo=TRUE}
 
 head(fc$counts)
+
+```
+
+
+========================================================
+
+```{r,eval=TRUE,echo=TRUE}
+
+head(fc$annotation)
 
 ```
 
@@ -334,6 +347,10 @@ Transformation of count data
 ```{r,eval=TRUE,echo=TRUE}
 
 # The function rlog , stands for regularized log , transforming the original count data to the log2 scale
+# Aim of this transformation,  the rlog and  the  VST,  is  to  remove  the  dependence  of  the  variance
+# on  the  mean,  so that data is suitable for visualization. 
+# particularly  the  high  variance  of  the  logarithm  of  count  data  when  the  mean  is  low. 
+# 
 
       rld<-rlog(dds)  
 
@@ -443,7 +460,8 @@ Exploring results
 
 ```{r,eval=TRUE,echo=TRUE}
       # Plot counts
-    
+   # Plot of normalized counts for a single gene on log scale
+
     plotCounts(dds,gene=which.min(res$padj),intgroup="Group")
 
 ```
@@ -511,9 +529,11 @@ Likelyhood Ratio Test
 ```{r,eval=FALSE,echo=TRUE}
 
 
-DESeq2 offers  two  kinds  of  hypothesis  tests:  
+DESeq2 offers  two  kinds  of  hypothesis  tests: 
+  
   1. The  Wald  test,  where  we  use  the  estimated  standard  error  of a  log2  fold  change  to  test  if  it  is  equal  to  zero.
-  2. the  likelihood  ratio  test  (LRT).  
+
+  2. The  likelihood  ratio  test  (LRT).  
   The  LRT  examines  two models  for  the  counts,  a full model  with  a  certain  number  of  terms  and  a
 reduced model,  in  which  some  of the terms of the full model are removed.  
 The test determines if the increased likelihood of the data using the extra terms in the full model is more than expected if those extra terms are truly zero.
@@ -525,9 +545,11 @@ The test determines if the increased likelihood of the data using the extra term
 ```{r,eval=FALSE,echo=TRUE}
 
 The LRT is therefore useful for testing multiple terms at once, for example testing 3 or more levels of a factor
-at once, or all interactions between two variables.  
+at once, or all interactions between two variables.
+
 The likelihood ratio test can be specified using the test argument to DESeq , which substitutes
-nbinomWaldTest with nbinomLRT.  In  this  case,  the  user  needs  to  provide  a  reduced  formula,  e.g.   one  in  which  a  number  of terms  from design(dds) are  removed.  
+nbinomWaldTest with nbinomLRT.  
+In  this  case,  the  user  needs  to  provide  a  reduced  formula,  e.g.   one  in  which  a  number  of terms  from design(dds) are  removed.  
 
 ```
 
@@ -570,7 +592,7 @@ Differential splicing analysis
 
  # Perform exon level read counting 
 
-fcexo<-featureCounts(files=targets$OutputFile,
+fcexo<-featureCounts(files=paste0(bamdir,targets$OutputFile),
  annot.ext=anno_for_featurecount,
  strandSpecific=strandspecific,
 isGTFAnnotationFile=TRUE,
@@ -582,6 +604,17 @@ useMetaFeatures=FALSE,
 allowMultiOverlap=TRUE)
                            
 ```
+
+========================================================
+
+```{r,eval=TRUE,echo=TRUE}
+   
+     
+  head(fcexo$counts)
+
+
+```
+
 
 ========================================================
 
@@ -740,18 +773,18 @@ write.table(altUsed,file="DiffUsedExons.txt",sep="\t")
 Gene Ontology and Pathway Enrichment Analysis
 ========================================================
 
-```{r,eval=TRUE,echo=TRUE}
+```{r,eval=FALSE,echo=TRUE}
     
 
-# We will perform GO analysis using goseq package.
+We will perform GO analysis using goseq package.
 
-# In order to perform a GO analysis of your RNA-seq data,goseq only requires a simple named vector, which contains two pieces of information.
+ In order to perform a GO analysis of your RNA-seq data,goseq only requires a simple named vector, which contains two pieces of information.
 
-# 1. Measured genes
-# all genes for which RNA-seq data was gathered for your experiment.  Each element of your vector should be named by a unique gene identifier.
+ 1. Measured genes
+ all genes for which RNA-seq data was gathered for your experiment.  Each element of your vector should be named by a unique gene identifier.
 
-# 2.Differentially expressed genes
-# each element of your vector should be either a 1 or 0, where 1 indicates that the gene is differentially expressed and 0 that it is not.
+ 2.Differentially expressed genes
+ each element of your vector should be either a 1 or 0, where 1 indicates that the gene is differentially expressed and 0 that it is not.
 
 ```
 

@@ -15,22 +15,22 @@ library(gplots)
 genome<-"mm9" 
 strandspecific<-0 
 factor1<-"Group"
-dir="/Users/skhadaya/Downloads/sratoolkit.2.5.5-mac64/bin/"
+dir="/home/ubuntu/referenceData"
 isPairedEnd<-TRUE
 nthreads=4
-bamdir="/Users/skhadaya/Downloads/rnaseqpractical/"
+bamdir="/home/ubuntu/referenceData"
 
 # read in target file using a funcion from limma package
 targets <- readTargets("targets.txt")
 targets
 
 # Get full path names of raw data files
-read1=paste0(dir,targets$InputFile)
-read2=paste0(dir,targets$InputFile2)
+read1=paste0(dir,targets$InputFile[6])
+read2=paste0(dir,targets$InputFile2[6])
 
-# get the directory with rsubread genome index
+# get the name of rsubread genome index
 
-index="index"
+index="mm9_index"
 
 #Step 1: Index building
 ref <- system.file("extdata","reference.fa",package="Rsubread")
@@ -39,10 +39,10 @@ buildindex(basename="reference_index",reference=ref)
 # align reads using rsubreads package
 if (isPairedEnd == TRUE)
 {
-  subjunc(index=index,readfile1=read1,readfile2=read2,input_format="gzFASTQ",output_format="BAM",output_file=paste0(dir,targets$OutputFile),nthreads=nthreads,unique=TRUE,indels=5)
+  subjunc(index=index,readfile1=read1,readfile2=read2,input_format="gzFASTQ",output_format="BAM",output_file=paste0(bamdir,targets$OutputFile),nthreads=nthreads,unique=TRUE,indels=5)
   
 }else {
-  subjunc(index=index,readfile1=read1,input_format="gzFASTQ",output_format="BAM",output_file=paste0(dir,targets$OutputFile),nthreads=nthreads,unique=TRUE,indels=5)
+  subjunc(index=index,readfile1=read1,input_format="gzFASTQ",output_format="BAM",output_file=paste0(bamdir,targets$OutputFile),nthreads=nthreads,unique=TRUE,indels=5)
 }
 
 
@@ -72,6 +72,9 @@ anno_for_featurecount<-paste0(bamdir,"genes.gtf")
    GTF.featureType="exon",useMetaFeatures=TRUE, GTF.attrType="gene_id",nthreads=nthreads,strandSpecific=strandspecific,isPairedEnd=isPairedEnd)
                               
   head(fc$counts)
+  
+  head(fc$annotation)
+  
   write.table(fc$counts,file="genecounts.txt",sep="\t")
   
   # collect sample information
@@ -179,7 +182,9 @@ colnames(colData)<-c("name","Group","Batch")
    fcexo<-featureCounts(files=paste0(bamdir,targets$OutputFile),annot.ext=anno_for_featurecount,strandSpecific=strandspecific,
      isGTFAnnotationFile=TRUE,GTF.featureType="exon",GTF.attrType="gene_id",nthreads=8,
       isPairedEnd=isPairedEnd,useMetaFeatures=FALSE, allowMultiOverlap=TRUE)
-                              
+       
+   head(fcexo$counts)
+   
    write.table(fcexo$counts,file="exoncounts.txt",sep="\t")
    
    # Get DEGList object
