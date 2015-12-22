@@ -130,7 +130,37 @@ colnames(colData)<-c("name","Group","Batch")
         
         resOrdered<-res[order(res$padj),]
     
-      write.table(resOrdered,file="DEgenes.txt",sep="\t")
+      # use biomart to annotate genes
+        library("biomaRt")    # mm9
+        mart =useMart('ENSEMBL_MART_ENSEMBL',dataset='mmusculus_gene_ensembl',host="may2012.archive.ensembl.org")
+        
+        testgetbm <- getBM(attributes=c('ensembl_gene_id','mgi_symbol','description'),
+                           filters ='ensembl_gene_id',values=rownames(resOrdered), mart=mart)
+        
+        # combine the symbol information to the DE list
+        resOrdered_allinfo<-merge(as.data.frame(resOrdered),testgetbm,by.x=0,by.y=1)
+        resOrdered_allinfo<-resOrdered_allinfo[order(resOrdered_allinfo$pvalue,decreasing=F),]
+        names(resOrdered_allinfo)[1]<-"gene_id"
+        
+      # save the result in .csv or .txt format
+        # write.table(resOrdered_allinfo,file="DEgenes.txt",sep="\t")   #save the result in .txt format
+      write.csv(resOrdered_allinfo,file="DEgenes.csv",row.names = F)
+      # generate files for GSEA-------------------------------------------------------------------
+        # (1) generate the .rnk file for the GSEA
+        # it contains gene_id and gene statistic
+        file4rnk<-resOrdered_allinfo[,c("gene_id","stat")]
+        #file4rnk<-file4rnk[file4rnk$gene_id!="",]
+        #file4rnk<-file4rnk[!duplicated(file4rnk$gene_id),]
+        file4rnk<-file4rnk[order(file4rnk$stat,decreasing=T),]
+        write.table(file4rnk, file="file4GSEA.rnk", row.names = F, col.names = T, quote=F, sep="\t")
+        
+        # (2) generate the .chip file
+        # it contains gene id, gene symbol and gene title
+        file4chip<-resOrdered_allinfo[,c("gene_id","mgi_symbol","description")]
+        file4chip$mgi_symbol[file4chip$mgi_symbol==""]<-"NA"
+        file4chip$description[file4chip$description==""]<-"NA"
+        names(file4chip)<-c("Probe Set ID","Gene Symbol","Gene Title")
+        write.table(file4chip, file="file4chip.chip", row.names = F, col.names = T, quote=F, sep="\t")
     
   # MA plot
       plotMA(res, main="DESeq2", ylim=c(-4,4))
