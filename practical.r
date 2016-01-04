@@ -67,6 +67,7 @@ write.table(alignstats,file="AlignmentSummary.txt",sep="\t")
 
 # count numbers of reads mapped to iGenome genes
 anno_for_featurecount<-paste0(bamdir,"genes.gtf")
+anno_for_splicing<-paste0(bamdir,"NCBIM37flattened.gtf")
 
   fc <-featureCounts(files=paste0(bamdir,targets$OutputFile),annot.ext=anno_for_featurecount,isGTFAnnotationFile=TRUE,
    GTF.featureType="exon",useMetaFeatures=TRUE, GTF.attrType="gene_id",nthreads=nthreads,strandSpecific=strandspecific,isPairedEnd=isPairedEnd)
@@ -209,7 +210,7 @@ colnames(colData)<-c("name","Group","Batch")
   # Perform splicing analysis
 
  # Perform exon level read counting 
-   fcexo<-featureCounts(files=paste0(bamdir,targets$OutputFile),annot.ext=anno_for_featurecount,strandSpecific=strandspecific,
+   fcexo<-featureCounts(files=paste0(bamdir,targets$OutputFile),annot.ext=anno_for_splicing,strandSpecific=strandspecific,
      isGTFAnnotationFile=TRUE,GTF.featureType="exon",GTF.attrType="gene_id",nthreads=8,
       isPairedEnd=isPairedEnd,useMetaFeatures=FALSE, allowMultiOverlap=TRUE)
        
